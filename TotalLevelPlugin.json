@@ -1,0 +1,14 @@
+{
+  "Author": "meoiswa",
+  "Name": "Total Level",
+  "Punchline": "Sums up all levels like that one classic MMO",
+  "Description": "Shows the total level of a Character in the Search Info panel.",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "runescape",
+    "osrs",
+    "2007scape",
+    "level",
+    "ui"
+  ]
+}
