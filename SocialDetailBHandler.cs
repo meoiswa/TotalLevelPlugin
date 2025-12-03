@@ -96,22 +96,12 @@ public class SocialDetailBHandler : IDisposable
     {
         this.configuration = configuration;
 
-        Service.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, "SocialDetailB", OnSocialDetailBSetup);
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "SocialDetailB", OnSocialDetailBUpdate);
     }
 
     public void Dispose()
     {
-        Service.AddonLifecycle.UnregisterListener(AddonEvent.PostSetup, "SocialDetailB", OnSocialDetailBSetup);
         Service.AddonLifecycle.UnregisterListener(AddonEvent.PostUpdate, "SocialDetailB", OnSocialDetailBUpdate);
-    }
-
-    private void OnSocialDetailBSetup(AddonEvent type, AddonArgs args)
-    {
-        if (!configuration.MasterEnable)
-            return;
-
-        UpdateSocialDetailB(args);
     }
 
     private void OnSocialDetailBUpdate(AddonEvent type, AddonArgs args)
@@ -132,6 +122,9 @@ public class SocialDetailBHandler : IDisposable
 
             var addon = (AtkUnitBase*)addonPtr;
             if (addon == null)
+                return;
+
+            if (!addon->IsFullyLoaded())
                 return;
 
             // Calculate total levels from AtkValues
@@ -168,7 +161,7 @@ public class SocialDetailBHandler : IDisposable
             {
                 // remove the level suffix
                 var parenthesisIndex = originalName.IndexOf('(');
-                originalName = originalName.Substring(0, parenthesisIndex-1);
+                originalName = originalName.Substring(0, parenthesisIndex - 1);
             }
 
             // Append level to the name
@@ -192,21 +185,21 @@ public class SocialDetailBHandler : IDisposable
         foreach (var (acronym, nodeId) in jobNodeIds)
         {
             var jobNode = addon->GetNodeById(nodeId);
+            if (jobNode == null)
+                continue;
             var textNode = jobNode->GetComponent()->GetNodeById(3)->GetAsAtkTextNode();
             if (textNode == null)
                 continue;
             var text = textNode->NodeText.ToString();
-            if (text.Contains("-"))
+            if (text.Contains("-") && jobToClass.TryGetValue(acronym, out var classAcronym) && classNodeIds.TryGetValue(classAcronym, out var classNodeId))
             {
-                if (jobToClass.TryGetValue(acronym, out var classAcronym))
-                {
-                    if (classNodeIds.TryGetValue(classAcronym, out var classNodeId))
-                    {
-                        jobNode = addon->GetNodeById(classNodeId);
-                        textNode = jobNode->GetComponent()->GetNodeById(3)->GetAsAtkTextNode();
-                        text = textNode->NodeText.ToString();
-                    }
-                }
+                jobNode = addon->GetNodeById(classNodeId);
+                if (jobNode == null)
+                    continue;
+                textNode = jobNode->GetComponent()->GetNodeById(3)->GetAsAtkTextNode();
+                if (textNode == null)
+                    continue;
+                text = textNode->NodeText.ToString();
             }
 
             if (int.TryParse(text.Split(' ')[0], out var level))
