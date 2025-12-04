@@ -14,5 +14,6 @@ public class Service
   [PluginService] public static INamePlateGui NamePlateGui { get; private set; }
   [PluginService] public static IPlayerState PlayerState { get; private set; }
   [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; }
+  [PluginService] public static IGameInteropProvider GameInteropProvider { get; private set; }
 #pragma warning restore CS8618
 }

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Excel.Sheets;
 
 namespace TotalLevelPlugin;
 
@@ -11,92 +13,23 @@ public class SocialDetailBHandler : IDisposable
 {
     private readonly Configuration configuration;
 
+    private delegate int GetClassIndexDelegate(uint classJobId);
+
+    [Signature("E8 ?? ?? ?? ?? 85 C0 78 ?? 45 8B C4 8D 50")]
+    private GetClassIndexDelegate GetClassIndex { get; set; }
+
+    // Start index for the class job levels in the number array
+    private readonly uint baseArrayIndex = 109;
+
     // Node ID for the character name text node in SocialDetailB
-    // This may need adjustment based on addon structure inspection
     private const uint NameNodeId = 3;
-
-    private readonly Dictionary<string, string> jobToClass = new()
-    {
-        { "PLD", "GLA" },
-        { "WAR", "MRD" },
-        { "WMH", "CNJ" },
-        { "SCH", "ACN" },
-        { "MNK", "PUG" },
-        { "DRG", "LNC" },
-        { "NIN", "ROG" },
-        { "BRD", "ARC" },
-        { "BLM", "THM" },
-        { "SUM", "ACN" },
-    };
-
-    private readonly Dictionary<string, uint> classNodeIds = new()
-    {
-        { "GLA", 44 },
-        { "MRD", 45 },
-
-        { "CJN", 53 },
-
-        { "PUG", 63 },
-        { "LNC", 64 },
-        { "ROG", 65 },
-
-        { "ARC", 72 },
-
-        { "THM", 81 },
-        { "ACN", 82 },
-    };
-
-    private readonly Dictionary<string, uint> jobNodeIds = new()
-    {
-        { "PLD", 39 },
-        { "WAR", 40 },
-        { "DRK", 41 },
-        { "GNB", 42 },
-
-        { "WHM", 48 },
-        { "SCH", 49 },
-        { "AST", 50 },
-        { "SGE", 51 },
-
-        { "MNK", 57 },
-        { "DRG", 58 },
-        { "NIN", 59 },
-        { "SAM", 60 },
-        { "RPR", 61 },
-        { "VPR", 62 },
-
-        { "BRD", 67 },
-        { "MCH", 68 },
-        { "DNC", 69 },
-
-        { "BLM", 76 },
-        { "SMN", 77 },
-        { "RDM", 78 },
-        { "PCT", 79 },
-        { "BLU", 80 },
-    };
-
-    private readonly Dictionary<string, uint> dohNodeIds = new()
-    {
-        { "CRP", 85 },
-        { "BSM", 86 },
-        { "ARM", 87 },
-        { "GSM", 88 },
-        { "LTW", 89 },
-        { "WVR", 90 },
-        { "ALC", 91 },
-        { "CUL", 92 },
-
-        { "MIN", 94 },
-        { "BTN", 95 },
-        { "FSH", 96 },
-    };
 
     public SocialDetailBHandler(Configuration configuration)
     {
         this.configuration = configuration;
 
         Service.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, "SocialDetailB", OnSocialDetailBUpdate);
+        Service.GameInteropProvider.InitializeFromAttributes(this);
     }
 
     public void Dispose()
@@ -181,48 +114,28 @@ public class SocialDetailBHandler : IDisposable
         var battleTotal = 0;
         var craftingTotal = 0;
 
-        // Read battle job levels from AtkValues
-        foreach (var (acronym, nodeId) in jobNodeIds)
+        var numberArray = AtkStage.Instance()->GetNumberArrayData(NumberArrayType.Hud2);
+        var classJobSheet = Service.DataManager.Excel.GetSheet<ClassJob>();
+
+        // Group the class jobs by the exp array index (groups Classes and Jobs together, like SMN+SCH+ACN)
+        foreach (var group in classJobSheet.GroupBy(x => x.ExpArrayIndex).Where(x => x.Key >= 0))
         {
-            var jobNode = addon->GetNodeById(nodeId);
-            if (jobNode == null)
-                continue;
-            var textNode = jobNode->GetComponent()->GetNodeById(3)->GetAsAtkTextNode();
-            if (textNode == null)
-                continue;
-            var text = textNode->NodeText.ToString();
-            if (text.Contains("-") && jobToClass.TryGetValue(acronym, out var classAcronym) && classNodeIds.TryGetValue(classAcronym, out var classNodeId))
-            {
-                jobNode = addon->GetNodeById(classNodeId);
-                if (jobNode == null)
-                    continue;
-                textNode = jobNode->GetComponent()->GetNodeById(3)->GetAsAtkTextNode();
-                if (textNode == null)
-                    continue;
-                text = textNode->NodeText.ToString();
-            }
+            var row = group.First();
+            var classJobCategoryId = row.ClassJobCategory.RowId;
+            var isBattleJobGroup = classJobCategoryId == 30 || classJobCategoryId == 31;
+            var isCraftingJobGroup = classJobCategoryId == 32 || classJobCategoryId == 33;
 
-            if (int.TryParse(text.Split(' ')[0], out var level))
-            {
-                battleTotal += level;
-            }
+            if (!isBattleJobGroup && !isCraftingJobGroup)
+                continue;
+
+            var classJobIndex = GetClassIndex(row.RowId);
+            var classJobLevel = numberArray->IntArray[baseArrayIndex + classJobIndex];
+
+            if (isBattleJobGroup)
+                battleTotal += classJobLevel;
+            else if (isCraftingJobGroup)
+                craftingTotal += classJobLevel;
         }
-
-        // Read crafting job levels from AtkValues
-        foreach (var (acronym, nodeId) in dohNodeIds)
-        {
-            var classNode = addon->GetNodeById(nodeId);
-            var textNode = classNode->GetComponent()->GetNodeById(3)->GetAsAtkTextNode();
-            if (textNode == null)
-                continue;
-            var text = textNode->NodeText.ToString();
-            if (int.TryParse(text.Split(' ')[0], out var level))
-            {
-                craftingTotal += level;
-            }
-        }
-
         return (battleTotal, craftingTotal);
     }
 }
-
