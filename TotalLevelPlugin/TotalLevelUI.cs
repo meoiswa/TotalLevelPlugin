@@ -2,7 +2,6 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Bindings.ImGui;
 using System;
 using System.Numerics;
-using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace TotalLevelPlugin;
 

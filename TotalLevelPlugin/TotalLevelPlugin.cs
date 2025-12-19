@@ -1,15 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
-using Dalamud.Game.Gui.NamePlate;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
-using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
