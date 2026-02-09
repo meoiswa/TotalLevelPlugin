@@ -15,5 +15,7 @@ public class Service
   [PluginService] public static IPlayerState PlayerState { get; private set; }
   [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; }
   [PluginService] public static IGameInteropProvider GameInteropProvider { get; private set; }
+  [PluginService] public static IContextMenu ContextMenu { get; private set; }
+  [PluginService] public static ITargetManager TargetManager { get; private set; }
 #pragma warning restore CS8618
 }

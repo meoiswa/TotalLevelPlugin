@@ -17,6 +17,7 @@ public sealed class TotalLevelPlugin : IDalamudPlugin
 
     private readonly Configuration configuration;
     private readonly SocialDetailBHandler socialDetailBHandler;
+    private readonly ContextMenuHandler contextMenuHandler;
 
     public IDalamudPluginInterface PluginInterface { get; init; }
     public ICommandManager CommandManager { get; init; }
@@ -47,6 +48,9 @@ public sealed class TotalLevelPlugin : IDalamudPlugin
         // instantiate the SocialDetailB handler
         socialDetailBHandler = new SocialDetailBHandler(configuration);
 
+        // instantiate the context menu handler
+        contextMenuHandler = new ContextMenuHandler(configuration);
+
         WindowSystem.AddWindow(Window);
 
         CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
@@ -61,6 +65,7 @@ public sealed class TotalLevelPlugin : IDalamudPlugin
 
     public void Dispose()
     {
+        contextMenuHandler.Dispose();
         socialDetailBHandler.Dispose();
 
         PluginInterface.UiBuilder.Draw -= DrawUI;

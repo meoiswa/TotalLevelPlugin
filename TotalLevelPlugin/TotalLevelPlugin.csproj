@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/14.0.1">
   <PropertyGroup>
-    <Version>0.0.0.2</Version>
+    <Version>0.0.0.3</Version>
     <Description>Shows the total level of a Character in the Search Info panel</Description>
     <PackageProjectUrl>https://github.com/meoiswa/TotalLevelPlugin</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>

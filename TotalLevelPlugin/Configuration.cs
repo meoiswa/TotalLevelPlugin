@@ -17,6 +17,7 @@ public class Configuration : IPluginConfiguration
   public bool IsVisible { get; set; } = true;
   public bool MasterEnable { get; set; } = true;
   public LevelDisplayMode DisplayMode { get; set; } = LevelDisplayMode.TotalLevel;
+  public bool ShowContextMenuEntry { get; set; } = true;
 
   [NonSerialized]
   private Action? saveAction;

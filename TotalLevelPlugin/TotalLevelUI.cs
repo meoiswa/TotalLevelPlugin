@@ -50,6 +50,13 @@ public class TotalLevelUI : Window, IDisposable
 
     if (configuration.MasterEnable)
     {
+      var contextMenuEntry = configuration.ShowContextMenuEntry;
+      if (ImGui.Checkbox("Show Context Menu Entry", ref contextMenuEntry))
+      {
+        configuration.ShowContextMenuEntry = contextMenuEntry;
+        configuration.Save();
+      }
+
       ImGui.TextWrapped("Display Mode:");
 
       var displayMode = (int)configuration.DisplayMode;

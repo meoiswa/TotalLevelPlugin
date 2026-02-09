@@ -15,7 +15,7 @@ public class SocialDetailBHandler : IDisposable
     private delegate int GetClassIndexDelegate(uint classJobId);
 
     [Signature("E8 ?? ?? ?? ?? 85 C0 78 ?? 45 8B C4 8D 50")]
-    private GetClassIndexDelegate GetClassIndex { get; set; }
+    private GetClassIndexDelegate? GetClassIndex { get; set; } = null;
 
     // Start index for the class job levels in the number array
     private readonly uint baseArrayIndex = 109;
@@ -110,6 +110,12 @@ public class SocialDetailBHandler : IDisposable
 
     private unsafe (int battleTotal, int craftingTotal) CalculateTotalLevelsFromAddon(AtkUnitBase* addon)
     {
+        if (GetClassIndex == null)
+        {
+            Service.PluginLog.Error("GetClassIndex delegate was not initialized.");
+            return (0, 0);
+        }
+
         var battleTotal = 0;
         var craftingTotal = 0;
 
